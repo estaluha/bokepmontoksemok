@@ -7,13 +7,16 @@ export const prerender = true;
 import { desk, nama, url, terbit } from '../../utils/site';
 
 const allVideos: VideoData[] = await getAllVideos();
-if (typeof video.category !== 'string' || video.category.trim() === '') {
-  console.warn(`[WARNING] Melewatkan video ID ${video.id || 'Unknown'} karena kategori tidak valid atau kosong: '${video.category}'`);
-  return;
-}
+
 const categoryData: { [key: string]: { count: number; thumbnails: string[]; } } = {};
 const allThumbnailDomains = new Set<string>();
+
 allVideos.forEach(video => {
+  if (typeof video.category !== 'string' || video.category.trim() === '') {
+    console.warn(`[WARNING] Melewatkan video ID ${video.id || 'Unknown'} karena kategori tidak valid atau kosong: '${video.category}' di halaman kategori index.`);
+    return; // Lewati video ini jika kategori tidak valid
+  }
+
   if (!categoryData[video.category]) {
     categoryData[video.category] = {
       count: 0,
@@ -23,18 +26,15 @@ allVideos.forEach(video => {
   categoryData[video.category].count++;
 
   if (video.thumbnail) {
-    categoryData[video.category].thumbnails.push(video.thumbnail);
     try {
-        allThumbnailDomains.add(new URL(video.thumbnail).origin);
+      new URL(video.thumbnail); // Validasi apakah URL thumbnail valid
+      categoryData[video.category].thumbnails.push(video.thumbnail);
+      allThumbnailDomains.add(new URL(video.thumbnail).origin);
     } catch (e) {
-        console.error(`[ERROR] Invalid thumbnail URL for video ID ${video.id} in category data collection:`, e);
+      console.error(`[ERROR] Invalid thumbnail URL for video ID ${video.id || 'Unknown'} in category data collection:`, e);
     }
   }
 });
-
-const ogImageForCategoryPage = categories.length > 0 && categories[0].thumbnail
-  ? categories[0].thumbnail
-  : new URL('/logo.png', url).href;
 
 const categories = Object.keys(categoryData)
   .map(categoryName => {
@@ -55,6 +55,20 @@ const categories = Object.keys(categoryData)
   })
   .sort((a, b) => a.name.localeCompare(b.name));
 
+let ogImageForCategoryPage = new URL('/logo.png', url).href;
+
+// Cari thumbnail dari kategori pertama yang memiliki thumbnail
+if (categories.length > 0) {
+  const categoryWithThumbnail = categories.find(cat => cat.thumbnail);
+  if (categoryWithThumbnail && categoryWithThumbnail.thumbnail) {
+    try {
+      new URL(categoryWithThumbnail.thumbnail);
+      ogImageForCategoryPage = categoryWithThumbnail.thumbnail;
+    } catch (e) {
+      console.warn(`[WARNING] URL thumbnail untuk kategori ${categoryWithThumbnail.name} tidak valid, menggunakan logo.png.`, e);
+    }
+  }
+}
 
 const breadcrumbs = [
   { name: 'Home', url: `${url}` },
@@ -97,7 +111,6 @@ const schemaWebPage = {
   }
 };
 
-// Buat string keywords yang relevan untuk halaman kategori
 const pageKeywords = `kategori video, daftar kategori, ${nama} kategori, nonton video gratis, ${categories.map(cat => cat.name).join(', ')}`;
 
 ---
@@ -108,7 +121,9 @@ const pageKeywords = `kategori video, daftar kategori, ${nama} kategori, nonton 
   siteName={nama}
   siteUrl={url}
   ogImage={ogImageForCategoryPage}
-  preconnectDomains={Array.from(allThumbnailDomains)} keywords={pageKeywords} >
+  preconnectDomains={Array.from(allThumbnailDomains)}
+  keywords={pageKeywords}
+>
   <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb)} />
   <script type="application/ld+json" set:html={JSON.stringify(schemaWebPage)} />
 
