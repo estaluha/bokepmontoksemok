@@ -29,6 +29,10 @@ allVideos.forEach(video => {
   }
 });
 
+const ogImageForCategoryPage = categories.length > 0 && categories[0].thumbnail
+  ? categories[0].thumbnail
+  : new URL('/logo.png', url).href;
+
 const categories = Object.keys(categoryData)
   .map(categoryName => {
     const categoryInfo = categoryData[categoryName];
@@ -69,8 +73,12 @@ const schemaWebPage = {
   "@context": "https://schema.org",
   "@type": "WebPage",
   "url": `${url}/category/`,
-  "name": `Daftar Kategori Video - ${nama}`,
   "description": `Jelajahi berbagai kategori video ${nama} terlengkap. Temukan video berdasarkan ${categories.slice(0, 3).map(cat => cat.name).join(', ')}${categories.length > 3 ? ', dan banyak kategori lainnya' : ''}.`,
+  "name": `Daftar Kategori Video - ${nama}`,
+    "image": {
+    "@type": "ImageObject",
+    "url": ogImageForCategoryPage
+  },
   "publisher": {
     "@type": "Organization",
     "name": nama,
@@ -96,6 +104,7 @@ const pageKeywords = `kategori video, daftar kategori, ${nama} kategori, nonton 
   description={`Jelajahi berbagai kategori video ${nama} terlengkap. Temukan video berdasarkan ${categories.slice(0, 3).map(cat => cat.name).join(', ')}${categories.length > 3 ? ', dan banyak kategori lainnya' : ''}. Nonton online gratis sekarang!`}
   siteName={nama}
   siteUrl={url}
+  ogImage={ogImageForCategoryPage}
   preconnectDomains={Array.from(allThumbnailDomains)} keywords={pageKeywords} >
   <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb)} />
   <script type="application/ld+json" set:html={JSON.stringify(schemaWebPage)} />

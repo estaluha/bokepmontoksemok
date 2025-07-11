@@ -80,9 +80,18 @@ export async function getStaticPaths() {
 
 const { categoryName, currentPage, totalPages, videos: paginatedVideos, preconnectDomains } = Astro.props;
 
-const currentUrl = new URL(Astro.url.pathname, url).href; // Get absolute URL for canonical
+const currentUrl = new URL(Astro.url.pathname, url).href;
 const prevPageUrl = currentPage > 1 ? `${url}/category/${slugify(categoryName)}/${currentPage - 1}` : null;
 const nextPageUrl = currentPage < totalPages ? `${url}/category/${slugify(categoryName)}/${currentPage + 1}` : null;
+let ogImageForCategoryPage = new URL('/logo.png', url).href;
+if (paginatedVideos.length > 0 && paginatedVideos[0].thumbnail) {
+  try {
+     new URL(paginatedVideos[0].thumbnail);
+    ogImageForCategoryPage = paginatedVideos[0].thumbnail;
+  } catch (e) {
+    console.warn(`[WARNING] URL thumbnail untuk video pertama di kategori ${categoryName} (halaman ${currentPage}) tidak valid, menggunakan logo.png. Video ID: ${paginatedVideos[0].id || 'Unknown'}`);
+  }
+}
 
 const breadcrumbs = [
   { name: 'Home', url: `${url}` },
@@ -107,6 +116,10 @@ const schemaCollectionPage = {
   "url": currentUrl,
   "name": `Video ${categoryName} - Halaman ${currentPage} - ${nama}`,
   "description": `Temukan koleksi video ${categoryName} terbaru dan terlengkap. Halaman ${currentPage} dari ${totalPages} di ${nama}. Nonton online gratis.`,
+  "image": {
+    "@type": "ImageObject",
+    "url": ogImageForCategoryPage
+  },
   "mainEntityOfPage": {
     "@type": "WebPage",
     "@id": currentUrl
@@ -145,6 +158,7 @@ const pageKeywords = `${categoryName}, video ${categoryName}, nonton ${categoryN
   description={`Nonton video ${categoryName} terlengkap di ${nama}. Halaman ${currentPage} dari ${totalPages}. Kumpulan video berkualitas tinggi, update rutin, dan gratis!`}
   preconnectDomains={preconnectDomains}
   siteUrl={url}
+  ogImage={ogImageForCategoryPage}
   keywords={pageKeywords}
   schemaJsonLd={pageSchemas}
 >

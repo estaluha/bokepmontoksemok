@@ -182,6 +182,24 @@ function capitalizeWords(str: string): string {
 const displayQuery = capitalizeWords(originalQuery);
 const currentUrl = new URL(Astro.url.pathname, url).href;
 
+let ogImageForSearchPage = new URL('/logo.png', url).href;
+
+if (paginatedResults.length > 0 && paginatedResults[0].thumbnail) {
+  try {
+    new URL(paginatedResults[0].thumbnail);
+    ogImageForSearchPage = paginatedResults[0].thumbnail;
+  } catch (e) {
+    console.warn(`[WARNING] Thumbnail URL dari hasil pencarian terpaginasi tidak valid, mencoba random posts. Video ID: ${paginatedResults[0].id || 'Unknown'}`);
+  }
+}
+else if (randomPostsBelowSearch.length > 0 && randomPostsBelowSearch[0].thumbnail) {
+  try {
+    new URL(randomPostsBelowSearch[0].thumbnail);
+    ogImageForSearchPage = randomPostsBelowSearch[0].thumbnail;
+  } catch (e) {
+    console.warn(`[WARNING] Thumbnail URL dari random posts tidak valid, menggunakan logo.png. Video ID: ${randomPostsBelowSearch[0].id || 'Unknown'}`);
+  }
+}
 
 const breadcrumbs = [
   { name: 'Home', url: `${url}` },
@@ -205,6 +223,10 @@ const schemaSearchResultsPage = {
   "url": currentUrl,
   "name": `Video untuk ${displayQuery} | Halaman ${currentPage} - ${nama}`,
   "description": `Menampilkan video yang relevan dengan '${displayQuery}'. Halaman ${currentPage} dari ${totalPages} hasil di ${nama}.`,
+  "image": {
+    "@type": "ImageObject",
+    "url": ogImageForSearchPage
+  },
   "mainEntityOfPage": {
     "@type": "WebPage",
     "@id": currentUrl
@@ -242,9 +264,10 @@ const nextPageUrl = currentPage < totalPages ? `${baseSearchUrl}/${currentPage +
 <Layout
   title={`${displayQuery} di ${nama} | Page ${currentPage}`}
   description={`${displayQuery} ${desk} di ${nama}. Page ${currentPage}.`}
+  ogImage={ogImageForSearchPage}
   preconnectDomains={preconnectDomains}
-  schemaJsonLd={pageSchemas} // Mengirim schema ke Layout
-  siteUrl={url} // Pastikan ini juga ada jika digunakan di Layout
+  schemaJsonLd={pageSchemas}
+  siteUrl={url}
   keywords={pageKeywords}
 >
   {prevPageUrl && <link rel="prev" href={prevPageUrl} />}
