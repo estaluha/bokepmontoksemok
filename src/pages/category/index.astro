@@ -14,7 +14,7 @@ const allThumbnailDomains = new Set<string>();
 allVideos.forEach(video => {
   if (typeof video.category !== 'string' || video.category.trim() === '') {
     console.warn(`[WARNING] Melewatkan video ID ${video.id || 'Unknown'} karena kategori tidak valid atau kosong: '${video.category}' di halaman kategori index.`);
-    return; // Lewati video ini jika kategori tidak valid
+    return;
   }
 
   if (!categoryData[video.category]) {
@@ -27,9 +27,11 @@ allVideos.forEach(video => {
 
   if (video.thumbnail) {
     try {
-      new URL(video.thumbnail); // Validasi apakah URL thumbnail valid
-      categoryData[video.category].thumbnails.push(video.thumbnail);
-      allThumbnailDomains.add(new URL(video.thumbnail).origin);
+      new URL(video.thumbnail);
+      if (!video.thumbnail.includes('placeholder.webp')) {
+        categoryData[video.category].thumbnails.push(video.thumbnail);
+        allThumbnailDomains.add(new URL(video.thumbnail).origin);
+      }
     } catch (e) {
       console.error(`[ERROR] Invalid thumbnail URL for video ID ${video.id || 'Unknown'} in category data collection:`, e);
     }
@@ -57,15 +59,16 @@ const categories = Object.keys(categoryData)
 
 let ogImageForCategoryPage = new URL('/logo.png', url).href;
 
-// Cari thumbnail dari kategori pertama yang memiliki thumbnail
 if (categories.length > 0) {
-  const categoryWithThumbnail = categories.find(cat => cat.thumbnail);
-  if (categoryWithThumbnail && categoryWithThumbnail.thumbnail) {
+  const categoryWithValidThumbnail = categories.find(cat =>
+    cat.thumbnail && !cat.thumbnail.includes('placeholder.webp')
+  );
+  if (categoryWithValidThumbnail && categoryWithValidThumbnail.thumbnail) {
     try {
-      new URL(categoryWithThumbnail.thumbnail);
-      ogImageForCategoryPage = categoryWithThumbnail.thumbnail;
+      new URL(categoryWithValidThumbnail.thumbnail);
+      ogImageForCategoryPage = categoryWithValidThumbnail.thumbnail;
     } catch (e) {
-      console.warn(`[WARNING] URL thumbnail untuk kategori ${categoryWithThumbnail.name} tidak valid, menggunakan logo.png.`, e);
+      console.warn(`[WARNING] URL thumbnail untuk kategori ${categoryWithValidThumbnail.name} tidak valid atau adalah placeholder, menggunakan logo.png.`, e);
     }
   }
 }
