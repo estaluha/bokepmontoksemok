@@ -7,7 +7,10 @@ export const prerender = true;
 import { desk, nama, url, terbit } from '../../utils/site';
 
 const allVideos: VideoData[] = await getAllVideos();
-
+if (typeof video.category !== 'string' || video.category.trim() === '') {
+  console.warn(`[WARNING] Melewatkan video ID ${video.id || 'Unknown'} karena kategori tidak valid atau kosong: '${video.category}'`);
+  return;
+}
 const categoryData: { [key: string]: { count: number; thumbnails: string[]; } } = {};
 const allThumbnailDomains = new Set<string>();
 allVideos.forEach(video => {
